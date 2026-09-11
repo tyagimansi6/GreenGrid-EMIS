@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { createFacility } from "../services/api";
+import { createFacility, exportFacilityCsv } from "../services/api";
+import AlertBadge from "./AlertBadge";
 
 const emptyForm = {
   name: "",
@@ -22,6 +23,8 @@ export default function FacilityList({
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [exportingId, setExportingId] = useState(null);
+  const [exportNotice, setExportNotice] = useState(null);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -46,6 +49,27 @@ export default function FacilityList({
       setFormError("Could not create the facility. Check the API and try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleExport(facility) {
+    setExportingId(facility.id);
+    setExportNotice(null);
+    try {
+      const filename = await exportFacilityCsv(facility.id, facility.name);
+      setExportNotice({
+        facilityId: facility.id,
+        type: "success",
+        message: `Downloaded ${filename}`,
+      });
+    } catch {
+      setExportNotice({
+        facilityId: facility.id,
+        type: "error",
+        message: `Could not export CSV for ${facility.name}.`,
+      });
+    } finally {
+      setExportingId(null);
     }
   }
 
@@ -87,12 +111,12 @@ export default function FacilityList({
                   <th className="px-4 py-3 font-semibold">Threshold (kWh)</th>
                   <th className="px-4 py-3 font-semibold">Logged (kWh)</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Report</th>
                 </tr>
               </thead>
               <tbody>
                 {facilities.map((facility) => {
                   const stats = statsByFacility[facility.id];
-                  const over = Boolean(stats?.over_threshold);
                   return (
                     <tr
                       key={facility.id}
@@ -109,16 +133,23 @@ export default function FacilityList({
                       <td className="px-4 py-3">
                         {formatNumber(stats?.total_consumption_kwh || 0)}
                       </td>
+                      <td className="min-w-[15rem] px-4 py-3">
+                        <AlertBadge stats={stats} />
+                      </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                            over
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => handleExport(facility)}
+                          disabled={exportingId === facility.id}
+                          className="rounded-lg border border-forest-800/20 bg-white px-3 py-1.5 text-xs font-semibold text-forest-800 transition hover:bg-sand disabled:opacity-60"
                         >
-                          {over ? "Over limit" : "Within limit"}
-                        </span>
+                          {exportingId === facility.id
+                            ? "Exporting…"
+                            : exportNotice?.facilityId === facility.id &&
+                                exportNotice.type === "success"
+                              ? "Downloaded"
+                              : "Export CSV"}
+                        </button>
                       </td>
                     </tr>
                   );
@@ -128,6 +159,15 @@ export default function FacilityList({
           </div>
         )}
       </div>
+      {exportNotice ? (
+        <p
+          className={`mt-3 text-sm ${
+            exportNotice.type === "success" ? "text-forest-700" : "text-red-700"
+          }`}
+        >
+          {exportNotice.message}
+        </p>
+      ) : null}
 
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-forest-950/50 p-4">

@@ -10,6 +10,17 @@
   --color-forest-500: #2a9d6f;
   --color-leaf: #3dcc8a;
   --color-sand: #f3f6f2;
+  --animate-alert-pulse: alert-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgb(220 38 38 / 0);
+  }
 }
 
 html {

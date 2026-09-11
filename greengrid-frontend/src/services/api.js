@@ -32,4 +32,29 @@ export async function fetchFacilityStats(facilityId) {
   return data;
 }
 
+export async function exportFacilityCsv(facilityId, facilityName = "facility") {
+  const response = await api.get(`facilities/${facilityId}/export_csv/`, {
+    responseType: "blob",
+  });
+
+  const disposition = response.headers["content-disposition"] || "";
+  const match = disposition.match(/filename="?([^"]+)"?/i);
+  const slug = String(facilityName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const filename = match?.[1] || `${slug || "facility"}-energy-report.csv`;
+
+  const blobUrl = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+
+  return filename;
+}
+
 export default api;
