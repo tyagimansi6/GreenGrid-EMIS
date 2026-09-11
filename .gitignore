@@ -1,0 +1,7 @@
+venv/
+greengrid-frontend/node_modules/
+greengrid-frontend/dist/
+db.sqlite3
+__pycache__/
+*.pyc
+.env
