@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: greengrid-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn greengrid_backend.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.2"
+      - key: DJANGO_SETTINGS_MODULE
+        value: greengrid_backend.settings
